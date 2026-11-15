@@ -39,6 +39,23 @@ virtual soundcheck).
 | LiveTest BBD Delay | Bucket Brigade | Bucket-brigade analogue delay (band-limiting, compander noise, Dist) |
 | LiveTest Tape Echo | Echo | Three-head tape echo: 7 modes, wow and flutter, saturation |
 
+### Two views: SQ and UNIT
+Every plugin (except Dyn8) has a **UNIT VIEW / SQ VIEW** button in the header. Each plugin
+instance remembers which view it was left in.
+- **SQ view** (default) follows the desk. A compressor opens like the SQ's compressor page: side
+  chain on the left, transfer graph and the model's controls in the middle, and parallel controls
+  plus a gain-reduction histogram on the right. Values sit in SQ-style touch tiles, so settings
+  copy across one-to-one.
+- **UNIT view** shows a hardware-style front panel for the unit type each model is based on. It has
+  knobs with printed scales (which show the real values), stepped selectors, lit push-button rows,
+  toggle switches, needle VU meters, LED gain-reduction ladders and value displays. On the FET 76,
+  the panel changes between silver and black with the UNIT switch. The front panels are original
+  artwork in the style of each unit type, not copies of A&H screens or any manufacturer's panel.
+  Sidechain, parallel and FX output controls stay as normal panels underneath.
+- Dyn8 has only the SQ view, because there's no hardware original for it.
+
+Both views keep the Live-series header, meters and dark/light modes.
+
 Common to all of them:
 - **Zero latency** (no look-ahead) and stereo or mono.
 - The same look as the rest of the Live series (LiveVoice, LiveMeter, ...), with dark and light modes.

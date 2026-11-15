@@ -26,6 +26,57 @@ namespace ltp
         }
     }
 
+    // ================================================================ SQ skin
+    void SqLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h, float pos, float, float, juce::Slider& s)
+    {
+        auto r = juce::Rectangle<int> (x, y, w, h).toFloat().reduced (2.0f, 1.0f);
+        const auto accent = s.findColour (juce::Slider::rotarySliderFillColourId);
+        const bool hot = s.isMouseOverOrDragging();
+        g.setColour (theme::panelHi);
+        g.fillRoundedRectangle (r, 4.0f);
+        g.setColour (hot ? accent : theme::border);
+        g.drawRoundedRectangle (r, 4.0f, hot ? 1.5f : 1.0f);
+
+        // value, large, like the SQ's touch tiles
+        g.setColour (s.isEnabled() ? theme::text : theme::textFaint);
+        g.setFont (theme::font (std::min (15.0f, r.getHeight() * 0.32f), true));
+        g.drawFittedText (s.getTextFromValue (s.getValue()), r.withTrimmedBottom (10.0f).toNearestInt(), juce::Justification::centred, 1, 0.75f);
+
+        // position bar along the bottom (bipolar parameters fill from the centre)
+        auto bar = r.removeFromBottom (9.0f).reduced (7.0f, 2.5f);
+        g.setColour (theme::bg);
+        g.fillRoundedRectangle (bar, 2.0f);
+        const bool bipolar = s.getMinimum() < 0.0 && s.getMaximum() > 0.0 && std::abs (s.getMinimum() + s.getMaximum()) < 1.0e-3;
+        const float from = bipolar ? bar.getCentreX() : bar.getX();
+        const float to = bar.getX() + bar.getWidth() * pos;
+        g.setColour (s.isEnabled() ? accent : accent.withSaturation (0.0f));
+        g.fillRoundedRectangle (juce::Rectangle<float> (std::min (from, to), bar.getY(), std::max (2.0f, std::abs (to - from)), bar.getHeight()), 2.0f);
+    }
+
+    void SqLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& b, const juce::Colour&, bool over, bool down)
+    {
+        auto r = b.getLocalBounds().toFloat().reduced (0.5f);
+        const bool on = b.getToggleState();
+        const auto accent = b.findColour (juce::TextButton::buttonOnColourId);
+        g.setColour (on ? accent.withAlpha (0.22f) : theme::panelHi);
+        g.fillRoundedRectangle (r, 3.0f);
+        if (down || over) { g.setColour (theme::text.withAlpha (down ? 0.10f : 0.05f)); g.fillRoundedRectangle (r, 3.0f); }
+        g.setColour (on ? accent : theme::border);
+        g.drawRoundedRectangle (r, 3.0f, 1.0f);
+        if (on)   // lit strip along the top edge
+        {
+            g.setColour (accent);
+            g.fillRoundedRectangle (r.withHeight (3.0f).reduced (3.0f, 0.0f).translated (0.0f, 1.5f), 1.5f);
+        }
+    }
+
+    void SqLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& b, bool, bool)
+    {
+        g.setColour (b.getToggleState() ? theme::text : theme::textDim);
+        g.setFont (getTextButtonFont (b, b.getHeight()));
+        g.drawFittedText (b.getButtonText(), b.getLocalBounds().reduced (3, 0), juce::Justification::centred, 1, 0.7f);
+    }
+
     // ================================================================ controls
     Knob::Knob (const juce::String& name, juce::Colour accent)
     {
@@ -51,11 +102,18 @@ namespace ltp
             slider.setDoubleClickReturnValue (true, p->convertFrom0to1 (p->getDefaultValue()));
     }
 
+    void Knob::setSq (bool sq)
+    {
+        sqStyle = sq;
+        slider.setTextBoxStyle (sq ? juce::Slider::NoTextBox : juce::Slider::TextBoxBelow, false, 80, 16);
+        resized();
+    }
+
     void Knob::resized()
     {
         auto r = getLocalBounds();
         label.setBounds (r.removeFromTop (14));
-        slider.setBounds (r);
+        slider.setBounds (sqStyle ? r.withSizeKeepingCentre (r.getWidth(), std::min (r.getHeight(), 60)) : r);
     }
 
     LabelledToggle::LabelledToggle (const juce::String& name, juce::Colour accent)
@@ -174,9 +232,10 @@ namespace ltp
     }
 
     // ================================================================ panel
-    Panel::Panel (const Section& s, Processor& p) : title (s.title), accentIndex (s.colour)
+    Panel::Panel (const Section& s, Processor& p, bool sq, bool vert) : sqStyle (sq), vertical (vert), title (s.title), accentIndex (s.colour)
     {
         const auto accent = accentColour (accentIndex);
+        const int kw = sq ? 80 : knobW;
         for (const auto& c : s.controls)
         {
             switch (c.type)
@@ -185,8 +244,9 @@ namespace ltp
                 {
                     auto* k = new Knob (c.label, accent);
                     k->attach (p.apvts, c.paramId);
+                    k->setSq (sq);
                     if (c.tooltip.isNotEmpty()) k->slider.setTooltip (c.tooltip);
-                    controls.add (k); widths.push_back (knobW);
+                    controls.add (k); widths.push_back (kw);
                     break;
                 }
                 case Ctl::Toggle:
@@ -237,8 +297,20 @@ namespace ltp
         }
     }
 
+    int Panel::preferredHeight() const
+    {
+        if (! vertical) return height;
+        return 32 + 82 * (int) controls.size() + 6;
+    }
+
     int Panel::preferredWidth() const
     {
+        if (vertical)
+        {
+            int w = 0;
+            for (auto cw : widths) w = std::max (w, cw);
+            return w + 20;
+        }
         int w = 20;
         for (auto cw : widths) w += cw + ctlGap;
         const int titleW = juce::GlyphArrangement::getStringWidthInt (theme::font (13.0f, true), title) + 40 + (power ? 50 : 0);
@@ -249,6 +321,12 @@ namespace ltp
     {
         if (power) power->setBounds (getWidth() - 48, 7, 38, 20);
         auto content = getLocalBounds().reduced (10, 0).withTrimmedTop (32).withTrimmedBottom (8);
+        if (vertical)
+        {
+            int y = content.getY();
+            for (auto* c : controls) { c->setBounds (content.getX(), y, content.getWidth(), 78); y += 82; }
+            return;
+        }
         int total = 0;
         for (auto cw : widths) total += cw + ctlGap;
         total -= ctlGap;
@@ -408,15 +486,28 @@ namespace ltp
         auto titleRow = inner.removeFromTop (16.0f);
         g.setColour (theme::textDim);
         g.setFont (theme::font (11.0f, true));
-        g.drawText ("TRANSFER CURVE (dBu)", titleRow.withWidth (inner.getHeight() + 30.0f), juce::Justification::centredLeft);
-        g.drawText ("DETECTOR LEVEL (grey) & GAIN REDUCTION (pink, dB)", titleRow.withTrimmedLeft (inner.getHeight() + 50.0f), juce::Justification::centredLeft);
+        if (showCurve) g.drawText ("TRANSFER CURVE (dBu)", titleRow.withWidth (inner.getHeight() + 30.0f), juce::Justification::centredLeft);
+        if (showHistory)
+            g.drawText (showCurve ? "DETECTOR LEVEL (grey) & GAIN REDUCTION (pink, dB)" : "HISTOGRAM",
+                        showCurve ? titleRow.withTrimmedLeft (inner.getHeight() + 50.0f) : titleRow, juce::Justification::centredLeft);
         inner.removeFromTop (4.0f);
 
-        auto square = inner.removeFromLeft (inner.getHeight()).withTrimmedLeft (22.0f).withTrimmedBottom (12.0f);
-        inner.removeFromLeft (28.0f);
-        auto hist = inner;
+        juce::Rectangle<float> square, hist;
+        if (showCurve && showHistory)
+        {
+            square = inner.removeFromLeft (inner.getHeight()).withTrimmedLeft (22.0f).withTrimmedBottom (12.0f);
+            inner.removeFromLeft (28.0f);
+            hist = inner;
+        }
+        else if (showCurve)
+        {
+            const float side = std::min (inner.getHeight(), inner.getWidth());
+            square = inner.withSizeKeepingCentre (side, side).withTrimmedLeft (22.0f).withTrimmedBottom (12.0f);
+        }
+        else hist = inner.withTrimmedLeft (26.0f);
 
         const float lo = -60.0f, hi = 0.0f;
+        if (showCurve) {
         auto xFor = [&] (float db) { return juce::jmap (juce::jlimit (lo, hi, db), lo, hi, square.getX(), square.getRight()); };
         auto yFor = [&] (float db) { return juce::jmap (juce::jlimit (lo, hi, db), lo, hi, square.getBottom(), square.getY()); };
 
@@ -458,6 +549,8 @@ namespace ltp
             g.fillEllipse (xFor (dotIn) - 4.0f, yFor (out) - 4.0f, 8.0f, 8.0f);
         }
         g.restoreState();
+        }
+        if (! showHistory) return;
 
         // history strip
         g.setColour (theme::bg);
@@ -577,8 +670,11 @@ namespace ltp
     }
 
     // ================================================================ header
-    Header::Header (Processor& p, std::function<void()> onTheme) : info (p.getInfo())
+    Header::Header (Processor& p, std::function<void()> onTheme, std::function<void()> onView) : info (p.getInfo())
     {
+        viewBtn.setTooltip ("Switch between the SQ-style page and the hardware-style UNIT front panel (saved with this plugin instance)");
+        viewBtn.onClick = [onView] { onView(); };
+        addAndMakeVisible (viewBtn);
         bypass.setClickingTogglesState (true);
         bypass.setColour (juce::TextButton::buttonOnColourId, theme::danger);
         bypass.setColour (juce::TextButton::textColourOnId, theme::onAccent);
@@ -604,7 +700,7 @@ namespace ltp
         g.setColour (theme::textFaint);
         g.setFont (theme::font (10.5f));
         g.drawText ("v" + info.version + "  -  SQ model: " + info.sqName + "  -  modeled on: " + info.modeledOn,
-                    juce::Rectangle<int> (15, 28, getWidth() - 200, 14), juce::Justification::centredLeft);
+                    juce::Rectangle<int> (15, 28, getWidth() - 300, 14), juce::Justification::centredLeft);
         g.setColour (theme::border);
         g.drawHorizontalLine (getHeight() - 1, 0.0f, (float) getWidth());
     }
@@ -616,6 +712,14 @@ namespace ltp
         bypass.setBounds (r.removeFromRight (80).withHeight (26).withY (cy - 13));
         r.removeFromRight (8);
         themeBtn.setBounds (r.removeFromRight (64).withHeight (26).withY (cy - 13));
+        r.removeFromRight (8);
+        viewBtn.setBounds (r.removeFromRight (96).withHeight (26).withY (cy - 13));
+    }
+
+    void Header::setViewIsUnit (bool unit)
+    {
+        viewBtn.setButtonText (unit ? "SQ VIEW" : "UNIT VIEW");
+        viewBtn.setVisible (info.hasUnitView);
     }
 
     // ================================================================ editor
@@ -627,55 +731,115 @@ namespace ltp
 
     Editor::Editor (Processor& p)
         : juce::AudioProcessorEditor (p), proc (p), info (p.getInfo()),
-          header (p, [this] { toggleTheme(); }), io (p)
+          header (p, [this] { toggleTheme(); }, [this] { toggleView(); }), io (p)
     {
         juce::ignoreUnused (themeReady);
         lnf.applyColours();
+        sqLnf.applyColours();
         setLookAndFeel (&lnf);
         addAndMakeVisible (header);
         addAndMakeVisible (io);
         io.setTooltip ("Input and output peak levels (dBFS). 0 dB on the SQ's meters is -18 dBFS here.");
-
         if (info.dynamics)
         {
             gr = std::make_unique<GrMeter> (info.maxGrDb);
             addAndMakeVisible (*gr);
         }
-        if (info.graph == Graph::Compressor)
-        {
-            compGraph = std::make_unique<CompGraph> (p);
-            addAndMakeVisible (*compGraph);
-        }
-        else if (info.graph == Graph::DynEq)
-        {
-            dynGraph = std::make_unique<DynEqGraph> (p);
-            addAndMakeVisible (*dynGraph);
-        }
-
-        for (const auto& s : p.getSections())
-        {
-            auto* panel = panels.add (new Panel (s, p));
-            panelNewRow.push_back (s.newRow);
-            addAndMakeVisible (panel);
-        }
-
-        const int meters = info.dynamics ? meterW : fxMeterW;
-        const int leftW = info.editorWidth;
-        const int panelsH = layoutPanels ({ 0, 0, leftW, 10000 }, false);
-        int h = headerH + gap + panelsH + gap;
-        if (compGraph || dynGraph) h += graphH + gap;
-        setSize (gap + leftW + gap + meters + gap, std::max (h, 360));
-        sendLookAndFeelChange();   // children were built before they joined this editor's look-and-feel
+        unitView = info.hasUnitView && proc.apvts.state.getProperty ("view", "sq").toString() == "unit";
+        buildView();
         startTimerHz (30);
     }
 
     Editor::~Editor()
     {
         stopTimer();
+        panels.clear();
+        scPanel.reset(); parPanel.reset();
+        faceplate.reset();
         setLookAndFeel (nullptr);
     }
 
     void Editor::paint (juce::Graphics& g) { g.fillAll (theme::bg); }
+
+    void Editor::toggleView()
+    {
+        unitView = ! unitView;
+        proc.apvts.state.setProperty ("view", unitView ? "unit" : "sq", nullptr);
+        buildView();
+    }
+
+    void Editor::buildView()
+    {
+        panels.clear();
+        panelNewRow.clear();
+        compGraph.reset(); histogram.reset(); dynGraph.reset(); faceplate.reset();
+        scPanel.reset(); parPanel.reset();
+        header.setViewIsUnit (unitView);
+
+        const auto sections = proc.getSections();
+        const bool sq = ! unitView;
+        auto addPanel = [&] (const Section& s)
+        {
+            auto* panel = panels.add (new Panel (s, proc, sq));
+            if (sq) panel->setLookAndFeel (&sqLnf);
+            panelNewRow.push_back (s.newRow);
+            addAndMakeVisible (panel);
+        };
+
+        int bodyH = 0;
+        if (isSqCompPage())
+        {
+            // SQ compressor page: side chain | graph + model parameters | parallel + histogram
+            compGraph = std::make_unique<CompGraph> (proc, true, false);
+            histogram = std::make_unique<CompGraph> (proc, false, true);
+            addAndMakeVisible (*compGraph);
+            addAndMakeVisible (*histogram);
+            for (const auto& s : sections)
+            {
+                if (s.role != Section::Extra) { addPanel (s); continue; }
+                Section side ("SIDE CHAIN", s.colour, {}), par ("PARALLEL", s.colour, {});
+                for (const auto& c : s.controls) (c.paramId == "mix" ? par : side).controls.push_back (c);
+                if (! side.controls.empty()) { scPanel = std::make_unique<Panel> (side, proc, true, true); scPanel->setLookAndFeel (&sqLnf); addAndMakeVisible (*scPanel); }
+                if (! par.controls.empty()) { parPanel = std::make_unique<Panel> (par, proc, true, true); parPanel->setLookAndFeel (&sqLnf); addAndMakeVisible (*parPanel); }
+            }
+            int centre = 470;
+            for (auto* pnl : panels) centre = std::max (centre, pnl->preferredWidth());
+            bodyWidth = (scPanel ? scColW + gap : 0) + centre + gap + parColW;
+            const int centreH = graphH + gap + layoutPanels ({ 0, 0, centre, 10000 }, false);
+            const int sideH = std::max (scPanel ? scPanel->preferredHeight() : 0, (parPanel ? parPanel->preferredHeight() + gap : 0) + 150);
+            bodyH = std::max (centreH, sideH);
+        }
+        else if (unitView)
+        {
+            auto spec = proc.getFaceplate();
+            if (spec.empty()) spec = FaceplateView::fromSections (proc);
+            faceplate = std::make_unique<FaceplateView> (proc, spec);
+            addAndMakeVisible (*faceplate);
+            if (info.graph == Graph::DynEq) { dynGraph = std::make_unique<DynEqGraph> (proc); addAndMakeVisible (*dynGraph); }
+            for (const auto& s : sections) if (s.role == Section::Extra) addPanel (s);
+            int extrasW = 0;
+            for (auto* pnl : panels) extrasW += pnl->preferredWidth() + gap;
+            bodyWidth = std::max ({ faceplate->preferredWidth(), extrasW - gap, 560 });
+            faceplate->setMinWidth (bodyWidth);
+            bodyH = faceplate->preferredHeight() + (panels.isEmpty() ? 0 : gap + layoutPanels ({ 0, 0, bodyWidth, 10000 }, false))
+                    + (dynGraph ? graphH + gap : 0);
+        }
+        else
+        {
+            if (info.graph == Graph::Compressor) { compGraph = std::make_unique<CompGraph> (proc); addAndMakeVisible (*compGraph); }
+            if (info.graph == Graph::DynEq) { dynGraph = std::make_unique<DynEqGraph> (proc); addAndMakeVisible (*dynGraph); }
+            for (const auto& s : sections) addPanel (s);
+            bodyWidth = info.editorWidth;
+            bodyH = layoutPanels ({ 0, 0, bodyWidth, 10000 }, false) + ((compGraph || dynGraph) ? graphH + gap : 0);
+        }
+
+        const int meters = info.dynamics ? meterW : fxMeterW;
+        const int w = gap + bodyWidth + gap + meters + gap;
+        const int h = std::max (headerH + gap + bodyH + gap, 360);
+        sendLookAndFeelChange();
+        if (getWidth() == w && getHeight() == h) resized();
+        else setSize (w, h);
+    }
 
     int Editor::layoutPanels (juce::Rectangle<int> area, bool apply)
     {
@@ -683,7 +847,6 @@ namespace ltp
         size_t i = 0;
         while (i < (size_t) panels.size())
         {
-            // gather one row
             std::vector<size_t> row;
             int used = 0;
             while (i < (size_t) panels.size())
@@ -723,6 +886,25 @@ namespace ltp
             right.removeFromRight (6);
         }
         io.setBounds (right);
+
+        if (isSqCompPage())
+        {
+            if (scPanel) { scPanel->setBounds (r.removeFromLeft (scColW).withHeight (scPanel->preferredHeight())); r.removeFromLeft (gap); }
+            auto par = r.removeFromRight (parColW);
+            r.removeFromRight (gap);
+            if (parPanel) { parPanel->setBounds (par.removeFromTop (parPanel->preferredHeight())); par.removeFromTop (gap); }
+            if (histogram) histogram->setBounds (par);
+            if (compGraph) { compGraph->setBounds (r.removeFromTop (graphH)); r.removeFromTop (gap); }
+            layoutPanels (r, true);
+            return;
+        }
+        if (unitView)
+        {
+            if (dynGraph) { dynGraph->setBounds (r.removeFromTop (graphH)); r.removeFromTop (gap); }
+            if (faceplate) { faceplate->setBounds (r.removeFromTop (faceplate->preferredHeight())); r.removeFromTop (gap); }
+            layoutPanels (r, true);
+            return;
+        }
         if (compGraph) { compGraph->setBounds (r.removeFromTop (graphH)); r.removeFromTop (gap); }
         if (dynGraph) { dynGraph->setBounds (r.removeFromTop (graphH)); r.removeFromTop (gap); }
         layoutPanels (r, true);
@@ -733,11 +915,10 @@ namespace ltp
         io.update();
         const float g = proc.grDb.exchange (0.0f);
         if (gr) gr->setValue (g);
-        if (compGraph)
-        {
-            compGraph->push (proc.detectorDb.exchange (-100.0f), g);
-            compGraph->repaint();
-        }
+        const float det = proc.detectorDb.exchange (-100.0f);
+        if (compGraph) { compGraph->push (det, g); compGraph->repaint(); }
+        if (histogram) { histogram->push (det, g); histogram->repaint(); }
+        if (faceplate) faceplate->update (g);
         if (dynGraph && (++frame % 2) == 0) dynGraph->repaint();
     }
 
@@ -747,6 +928,7 @@ namespace ltp
         theme::setLightMode (! theme::lightMode);
         theme::saveLightModePreference (theme::lightMode);
         lnf.applyColours();
+        sqLnf.applyColours();
         theme::remapColours (*this, before, theme::currentPalette());
         sendLookAndFeelChange();
         repaint();

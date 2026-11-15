@@ -28,7 +28,8 @@ namespace ltp
             return { "SIDECHAIN & PARALLEL", colour,
                      { choice ("scType", "SC FILTER", "Filters only what the detector hears (the audio is not filtered)"),
                        knob ("scFreq", "SC FREQ"),
-                       knob ("mix", "PARALLEL", "Wet/dry blend: 100% = fully compressed, lower blends in the dry signal (parallel compression)") } };
+                       knob ("mix", "PARALLEL", "Wet/dry blend: 100% = fully compressed, lower blends in the dry signal (parallel compression)") },
+                     {}, false, Section::Extra };
         }
 
         float transferCurveDb (float inDbfs) const override { return inDbfs + staticGainDb (inDbfs); }

@@ -25,7 +25,7 @@ namespace ltp
         {
             return { "OUTPUT", colour,
                      { knob ("mix", "MIX", "100% = effect only, like an SQ FX return. Lower it to blend in the dry signal when used as an insert"),
-                       knob ("level", "LEVEL", "Effect return level") } };
+                       knob ("level", "LEVEL", "Effect return level") }, {}, false, Section::Extra };
         }
 
         void prepareDsp (double sampleRate, int maxBlock) override

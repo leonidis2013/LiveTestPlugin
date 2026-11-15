@@ -61,6 +61,20 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "BUCKET BRIGADE DELAY"; f.subtitle = "Analogue BBD delay  -  SQ model: Bucket Brigade";
+        f.panel = 0xff2e3a2b; f.ink = 0xffeaf0e2; f.knobs = Faceplate::ChickenHead; f.led = 0xffff4a3a;
+        f.rows = { { fpDisplay ("timeL", "TIME L"), fpTap(), fpButtons ("timeMode", "MODE"), fpButtons ("tempoSrc", "TEMPO"),
+                     fpStepped ("noteL", "NOTE L", 0), fpStepped ("noteR", "NOTE R", 0), fpPush ("link", "LINK") },
+                   { fpKnob ("timeL", "TIME L", 1), fpKnob ("timeR", "TIME R", 1), fpKnob ("feedback", "FEEDBACK", 2),
+                     fpKnob ("width", "WIDTH", 0), fpSwitch ("clean", "BBD", "CLEAN"), fpSwitch ("dist", "NORMAL", "DIST") },
+                   { fpKnob ("inHp", "INPUT HP", 0), fpKnob ("inLp", "INPUT LP", 0), fpKnob ("lowDamp", "LOW DAMP", 0),
+                     fpKnob ("highDamp", "HIGH DAMP", 0), fpButtons ("fbSlope", "SLOPE") } };
+        return f;
+    }
+
     double tailSeconds() const override { return 12.0; }
 
 protected:

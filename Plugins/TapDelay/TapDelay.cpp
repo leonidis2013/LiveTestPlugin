@@ -54,6 +54,19 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "STEREO TAP DELAY"; f.subtitle = "Digital delay  -  SQ model: Stereo Tap Delay";
+        f.panel = 0xff2c3036; f.ink = 0xffdfe4ea; f.finish = Faceplate::Brushed; f.knobs = Faceplate::Silver; f.led = 0xff47ff6e;
+        f.rows = { { fpDisplay ("bpm", "TEMPO"), fpTap(), fpButtons ("timeMode", "MODE"), fpButtons ("tempoSrc", "TEMPO"),
+                     fpStepped ("noteL", "NOTE L", 0), fpStepped ("noteR", "NOTE R", 0), fpPush ("link", "LINK") },
+                   { fpDisplay ("timeL", "TIME L"), fpKnob ("timeL", "TIME L", 0), fpKnob ("timeR", "TIME R", 0),
+                     fpKnob ("feedback", "FEEDBACK", 1), fpKnob ("width", "WIDTH", 0), fpPush ("scatter", "SCATTER") },
+                   { fpKnob ("inHp", "INPUT HP", 0), fpKnob ("inLp", "INPUT LP", 0), fpKnob ("fbFreq", "FB FILTER", 0), fpButtons ("fbSlope", "FB SLOPE") } };
+        return f;
+    }
+
     double tailSeconds() const override { return 10.0; }
 
 protected:

@@ -70,6 +70,19 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "76 LIMITING AMPLIFIER"; f.subtitle = "FET peak limiter  -  SQ model: Peak Limiter 76";
+        f.panel = 0xffc9ccd0; f.ink = 0xff1c1e21; f.finish = Faceplate::Brushed; f.knobs = Faceplate::Pointer; f.led = 0xffff4a3a;
+        f.altParam = "unit"; f.altPanel = 0xff1a1b1d; f.altInk = 0xffe8e8e8; f.altFinish = Faceplate::Paint; f.altKnobs = Faceplate::Pointer;
+        const juce::StringArray seven { "1", "2", "3", "4", "5", "6", "7" };
+        f.rows = { { fpKnob ("input", "INPUT", 2), fpVu ("GAIN REDUCTION", 2), fpKnob ("output", "OUTPUT", 2) },
+                   { fpKnob ("attack", "ATTACK", 0, seven), fpKnob ("release", "RELEASE", 0, seven), fpButtons ("ratio", "RATIO"),
+                     fpPush ("link", "GAIN LINK"), fpSwitch ("unit", "SILVER", "BLACK") } };
+        return f;
+    }
+
     // ------------------------------------------------------------ static model helpers
     struct RatioModel { float ratio, threshDb, kneeDb; };
     static RatioModel ratioModel (int idx)

@@ -52,6 +52,16 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "BUS COMPRESSOR"; f.subtitle = "Console VCA bus compressor  -  SQ model: Bus";
+        f.panel = 0xff4b525a; f.ink = 0xffeef1f4; f.finish = Faceplate::Hammertone; f.knobs = Faceplate::BlackSkirt; f.led = 0xffffc53a;
+        f.rows = { { fpKnob ("thresh", "THRESHOLD", 1), fpVu ("GAIN REDUCTION", 2), fpKnob ("makeup", "MAKE-UP", 1) },
+                   { fpStepped ("ratio", "RATIO"), fpStepped ("attack", "ATTACK ms"), fpStepped ("release", "RELEASE s") } };
+        return f;
+    }
+
     static float kneeFor (int ratioIdx) { return ratioIdx == 0 ? 10.0f : ratioIdx == 1 ? 6.0f : 3.0f; }
     static float ratioFor (int ratioIdx) { return ratioIdx == 0 ? 2.0f : ratioIdx == 1 ? 4.0f : 10.0f; }
 

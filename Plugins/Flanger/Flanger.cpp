@@ -61,6 +61,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "FLANGER"; f.subtitle = "SQ model: Flanger";
+        f.panel = 0xff3a2953; f.ink = 0xfff0e8ff; f.knobs = Faceplate::Silver; f.led = 0xffd08bff;
+        f.rows = { { fpButtons ("model", "MODEL"), fpKnob ("speed", "SPEED", 1), fpKnob ("depth", "DEPTH", 1), fpKnob ("regen", "REGENERATE", 1),
+                     fpStepped ("lfoType", "LFO", 0) },
+                   { fpPush ("split", "SPLIT"), fpPush ("spread", "SPREAD"), fpPush ("manual", "MANUAL"), fpKnob ("manualPos", "POSITION", 1) } };
+        return f;
+    }
+
     struct Model { float minMs, maxMs, fbSign, fbMax, sat; };
     static Model modelFor (int i)
     {

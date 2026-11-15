@@ -104,14 +104,16 @@ namespace
 
     void snapshot (const ltp::Factory& factory, const juce::File& dir, const juce::String& name)
     {
-        for (bool light : { false, true })
+        for (int pass = 0; pass < 3; ++pass)   // SQ dark, SQ light, UNIT dark
         {
+            const bool light = pass == 1, unit = pass == 2;
             theme::setLightMode (light);
             theme::saveLightModePreference (light);
             std::unique_ptr<juce::AudioProcessor> proc (factory());
             auto& p = *proc;
             p.setPlayConfigDetails (2, 2, 48000.0, 512);
             p.prepareToPlay (48000.0, 512);
+            dynamic_cast<ltp::Processor&> (p).apvts.state.setProperty ("view", unit ? "unit" : "sq", nullptr);
             std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditorAndMakeActive());
             if (ed == nullptr) return;
             // a few timer ticks' worth of metering so the graphs show something
@@ -128,7 +130,7 @@ namespace
                 if (auto* t = dynamic_cast<juce::Timer*> (ed.get())) t->timerCallback();
             }
             auto img = ed->createComponentSnapshot (ed->getLocalBounds(), true, 1.0f);
-            auto f = dir.getChildFile (name + (light ? "-light.png" : "-dark.png"));
+            auto f = dir.getChildFile (name + (unit ? "-unit.png" : light ? "-sq-light.png" : "-sq.png"));
             f.deleteFile();
             juce::FileOutputStream out (f);
             juce::PNGImageFormat png;

@@ -64,6 +64,19 @@ namespace ltp
             return s;
         }
 
+        Faceplate getFaceplate() const override
+        {
+            Faceplate f;
+            f.title = Rms ? "RMS COMPRESSOR" : "PEAK COMPRESSOR";
+            f.subtitle = Rms ? "SQ model: Manual RMS" : "SQ model: Manual Peak";
+            f.panel = 0xff2a2f36; f.ink = 0xffd9dee5; f.finish = Faceplate::Brushed; f.knobs = Faceplate::Silver; f.led = 0xff35d0ff;
+            f.rows = { { fpDisplay ("thresh", "THRESHOLD"), fpKnob ("thresh", "THRESHOLD", 1), fpKnob ("ratio", "RATIO", 1), fpKnob ("attack", "ATTACK", 1),
+                         fpKnob ("release", "RELEASE", 1), fpKnob ("gain", "GAIN", 1), fpLeds ("GR") } };
+            if (Rms) f.rows.push_back ({ fpButtons ("knee", "KNEE") });
+            else f.rows.push_back ({ fpButtons ("knee", "KNEE"), fpButtons ("smooth", "SMOOTHING"), fpPush ("hold", "AUTO HOLD") });
+            return f;
+        }
+
     protected:
         void prepareModel (double sampleRate) override
         {

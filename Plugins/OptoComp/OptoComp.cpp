@@ -56,6 +56,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "OPTO COMPRESSOR"; f.subtitle = "Optical gain cell  -  SQ model: Opto";
+        f.panel = 0xffe6dcc4; f.ink = 0xff2b2925; f.led = 0xffff9a1f; f.knobs = Faceplate::Cream;
+        f.rows = { { fpKnob ("thresh", "THRESHOLD", 2), fpVu ("GAIN REDUCTION", 2), fpKnob ("gain", "GAIN", 2) },
+                   { fpKnob ("ratio", "RATIO", 1), fpStepped ("attack", "ATTACK"), fpStepped ("recovery", "RECOVERY"),
+                     fpPush ("transient", "TRANSIENT"), fpPush ("burn", "BURN") } };
+        return f;
+    }
+
 protected:
     static constexpr float kneeDb = 12.0f;
 

@@ -60,6 +60,18 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "COMPSTORTION"; f.subtitle = "Multi-mode compressor  -  SQ model: CompStortion";
+        f.panel = 0xff151617; f.ink = 0xffd9dadc; f.knobs = Faceplate::Pointer; f.led = 0xff38b6ff;
+        const juce::StringArray tens { "0", "2", "4", "6", "8", "10" };
+        f.rows = { { fpKnob ("input", "INPUT", 2), fpKnob ("attack", "ATTACK", 1, tens), fpKnob ("release", "RELEASE", 1, tens),
+                     fpKnob ("output", "OUTPUT", 2), fpLeds ("GR") },
+                   { fpStepped ("ratio", "RATIO", 1), fpButtons ("dist", "DISTORTION"), fpPush ("detHp", "HP"), fpPush ("detBp", "BAND PASS") } };
+        return f;
+    }
+
     struct Mode { float ratio, knee, attMul, relMul, overshoot; };
     static Mode modeFor (int idx)
     {

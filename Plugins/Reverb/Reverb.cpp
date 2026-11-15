@@ -95,6 +95,22 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "SPATIAL REVERB"; f.subtitle = "Algorithmic reverb  -  SQ model: SMR Reverb";
+        f.panel = 0xff1d2733; f.ink = 0xffd8e6f2; f.finish = Faceplate::Brushed; f.knobs = Faceplate::Silver; f.led = 0xff35d0ff;
+        f.rows = { { fpDisplay ("decay", "DECAY"), fpButtons ("model", "MODEL"), fpKnob ("predelay", "PRE-DELAY", 1), fpKnob ("decay", "DECAY", 2),
+                     fpKnob ("hfDecay", "HF DECAY", 1), fpKnob ("hfSlope", "HF SLOPE", 1) },
+                   { fpKnob ("lfCut", "LF CUT", 0), fpKnob ("hfCut", "HF CUT", 0), fpGap(), fpKnob ("diffusion", "SOURCE DIFF", 0), fpKnob ("size", "SIZE", 0),
+                     fpKnob ("shape", "SHAPE", 0), fpKnob ("detail", "REF DETAIL", 0), fpGap(), fpKnob ("echo1", "ECHO 1", 0), fpKnob ("echo1Lvl", "LEVEL 1", 0),
+                     fpKnob ("echo2", "ECHO 2", 0), fpKnob ("echo2Lvl", "LEVEL 2", 0) },
+                   { fpKnob ("bodyDiff", "BODY DIFF", 0), fpKnob ("tailDiff", "TAIL DIFF", 0), fpKnob ("modDepth", "MOD DEPTH", 0), fpKnob ("modSpeed", "MOD SPEED", 0),
+                     fpGap(), fpKnob ("lfDecay", "LF DECAY", 0), fpKnob ("lfXover", "LF XOVER", 0), fpKnob ("colour", "COLOUR", 0), fpKnob ("colourFreq", "COLOUR FREQ", 0),
+                     fpGap(), fpKnob ("reflLevel", "REFLECTIONS", 0), fpKnob ("decayLevel", "DECAY LEVEL", 0) } };
+        return f;
+    }
+
     double tailSeconds() const override { return pv ("decay") * 1.6 + pv ("predelay") * 0.001 + 1.0; }
 
     static constexpr int N = 8;

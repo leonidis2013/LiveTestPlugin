@@ -50,6 +50,16 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "MIGHTY COMPRESSOR"; f.subtitle = "Transistor-array VCA  -  SQ model: Mighty";
+        f.panel = 0xff6a1f1f; f.ink = 0xfff3e9df; f.knobs = Faceplate::BlackSkirt; f.led = 0xffffc53a;
+        f.rows = { { fpKnob ("thresh", "THRESHOLD", 2), fpKnob ("release", "RELEASE", 1), fpKnob ("output", "OUTPUT", 2),
+                     fpSwitch ("detector", "VOICE 1", "VOICE 2"), fpLeds ("GR") } };
+        return f;
+    }
+
     static constexpr float ratio = 10.0f, knee = 3.0f;
 
 protected:

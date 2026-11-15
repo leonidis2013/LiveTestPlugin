@@ -134,7 +134,8 @@ public:
     {
         Info i; LTP_BASE_INFO (i)
         i.graph = Graph::DynEq;
-        i.editorWidth = 1130;
+        i.editorWidth = 1200;
+        i.hasUnitView = false;   // a digital tool - there is no hardware original to draw
         i.maxGrDb = 18.0f;
         return i;
     }
@@ -169,7 +170,7 @@ public:
                                                                      knob (p + "Ratio", "RATIO"),
                                                                      knob (p + "Gain", "GAIN") }, p + "On", b == 1 });
         }
-        s.push_back ({ "OUTPUT", 6, { knob ("trim", "TRIM") } });
+        s.push_back ({ "OUTPUT", 6, { knob ("trim", "TRIM") }, {}, false, Section::Extra });
         return s;
     }
 

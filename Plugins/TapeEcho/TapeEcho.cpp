@@ -57,6 +57,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "TAPE ECHO"; f.subtitle = "Three-head tape echo  -  SQ model: Echo";
+        f.panel = 0xff2f4034; f.ink = 0xfff1ead6; f.finish = Faceplate::Hammertone; f.knobs = Faceplate::ChickenHead; f.led = 0xffff4a3a;
+        f.rows = { { fpKnob ("inGain", "INPUT", 1), fpStepped ("mode", "MODE SELECTOR", 2), fpKnob ("rate", "REPEAT RATE", 2, { "0", "2", "4", "6", "8", "10" }),
+                     fpKnob ("intensity", "INTENSITY", 2, { "0", "2", "4", "6", "8", "10" }), fpKnob ("echoVol", "ECHO VOLUME", 1) },
+                   { fpKnob ("bass", "BASS", 0), fpKnob ("treble", "TREBLE", 0), fpSwitch ("noise", "NOISE OFF", "NOISE ON") } };
+        return f;
+    }
+
     double tailSeconds() const override { return 15.0; }
 
     static constexpr float headRatio[3] = { 1.0f, 1.97f, 2.95f };

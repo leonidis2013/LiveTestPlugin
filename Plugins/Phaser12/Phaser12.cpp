@@ -58,6 +58,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "12 STAGE PHASER"; f.subtitle = "Synth phaser  -  SQ model: MOO 12 Stage Phaser";
+        f.panel = 0xffcf7426; f.ink = 0xff1b1712; f.knobs = Faceplate::BlackSkirt; f.led = 0xffff3b2f;
+        f.rows = { { fpSwitch ("stages", "6 STAGES", "12 STAGES"), fpKnob ("resStage", "RES STAGE", 0), fpKnob ("resonance", "MIX RESONANCE", 2, { "#" }),
+                     fpKnob ("rate", "LFO RATE", 2) },
+                   { fpStepped ("lfoType", "LFO SELECT", 1), fpSwitch ("stereo", "MONO", "SPLIT"), fpKnob ("depth", "DEPTH", 1), fpKnob ("offset", "OFFSET", 1) } };
+        return f;
+    }
+
 protected:
     void prepareFx (double sampleRate, int) override { offsetS.prepare (sampleRate, 40.0f); offsetS.reset (pv ("offset") * 0.01f); counter = 0; }
 

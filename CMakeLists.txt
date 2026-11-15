@@ -37,7 +37,8 @@ set(LTP_EXTRA_DEFINES "" CACHE STRING "Extra compile definitions (local Linux ch
 
 set(LTP_SHARED_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Shared/Base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Shared/Ui.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/Shared/Ui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Shared/Faceplate.cpp)
 
 set(LTP_COMMON_DEFINES
     LTP_SUITE_VERSION="${PROJECT_VERSION}"

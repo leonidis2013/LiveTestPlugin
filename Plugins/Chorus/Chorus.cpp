@@ -55,6 +55,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "STEREO CHORUS"; f.subtitle = "SQ model: Chorus";
+        f.panel = 0xff1f4c74; f.ink = 0xffeef5ff; f.knobs = Faceplate::Silver; f.led = 0xff7fe3ff;
+        f.rows = { { fpKnob ("rate", "RATE", 2), fpKnob ("depth", "DEPTH", 2), fpSwitch ("shape", "SINE", "RECTIFIED"),
+                     fpPush ("split", "LFO SPLIT"), fpPush ("wide", "WIDE"), fpPush ("multi", "MULTI") },
+                   { fpPush ("autopan", "AUTOPAN"), fpKnob ("panDepth", "PAN DEPTH", 0), fpKnob ("panSpeed", "PAN SPEED", 0) } };
+        return f;
+    }
+
 protected:
     void prepareFx (double sampleRate, int) override
     {

@@ -54,6 +54,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "ADT DOUBLER"; f.subtitle = "Tape double tracking  -  SQ model: ADT";
+        f.panel = 0xffbcb6a8; f.ink = 0xff222222; f.finish = Faceplate::Brushed; f.knobs = Faceplate::Cream; f.led = 0xffff7a1a;
+        f.rows = { { fpKnob ("separation", "DELAY SEPARATION", 2, { "CHO", "", "DBL", "", "ECHO", "", "SLAP" }), fpKnob ("thickness", "THICKNESS", 2),
+                     fpSwitch ("tracks", "DOUBLE", "QUAD"), fpPush ("wide", "WIDE") },
+                   { fpPush ("autopan", "AUTOPAN"), fpKnob ("panDepth", "DEPTH", 0), fpKnob ("panSpeed", "SPEED", 0) } };
+        return f;
+    }
+
     static float delayMs (float sep) { return 2.0f * std::pow (75.0f, sep / 100.0f); }   // 2 ms .. 150 ms
 
 protected:

@@ -58,6 +58,17 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "GATED REVERB"; f.subtitle = "Non-linear reverb  -  SQ model: Gated Verb";
+        f.panel = 0xff1b1b1d; f.ink = 0xffe9e9e9; f.knobs = Faceplate::BlackSkirt; f.led = 0xffff4a3a;
+        f.rows = { { fpDisplay ("hold", "HOLD"), fpButtons ("model", "PROGRAM"), fpKnob ("predelay", "PRE-DELAY", 1), fpKnob ("attack", "ATTACK", 1),
+                     fpKnob ("hold", "HOLD", 1), fpKnob ("release", "RELEASE", 1) },
+                   { fpKnob ("loCut", "LO CUT", 0), fpKnob ("hiCut", "HI CUT", 0), fpKnob ("diffusion", "DIFFUSION", 1), fpButtons ("width", "OUTPUT") } };
+        return f;
+    }
+
     double tailSeconds() const override { return 0.75; }
 
     static constexpr int maxTaps = 900;

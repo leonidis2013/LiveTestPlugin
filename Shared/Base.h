@@ -34,14 +34,68 @@ namespace ltp
 
     struct Section
     {
+        // Extra = not part of the modeled unit (sidechain, parallel, FX output): in UNIT view these
+        // stay as normal panels under the faceplate; in the SQ compressor page they become the
+        // side-chain / parallel columns.
+        enum Role { Normal, Extra };
+
         Section() = default;
-        Section (juce::String t, int c, std::vector<Ctl> ctls, juce::String on = {}, bool row = false)
-            : title (std::move (t)), colour (c), controls (std::move (ctls)), onParam (std::move (on)), newRow (row) {}
+        Section (juce::String t, int c, std::vector<Ctl> ctls, juce::String on = {}, bool row = false, Role r = Normal)
+            : title (std::move (t)), colour (c), controls (std::move (ctls)), onParam (std::move (on)), newRow (row), role (r) {}
         juce::String title;
         int colour = 0;                 // index into the accent list (see Ui.cpp)
         std::vector<Ctl> controls;
         juce::String onParam;           // optional bool parameter shown as the panel's IN button
         bool newRow = false;            // start this panel on a new row
+        Role role = Normal;
+    };
+
+    // ---------------------------------------------------------------- hardware (UNIT view) faceplates
+    // A faceplate is a few rows of hardware-style controls, laid out automatically.
+    struct FpItem
+    {
+        enum Kind { Knob, Stepped, Buttons, Push, Switch, Vu, Leds, Display, Tap, Gap };
+        Kind kind = Knob;
+        juce::String param, label;
+        int size = 1;                   // knobs: 0 small, 1 medium, 2 large. Vu: 1 normal, 2 big
+        juce::StringArray scale;        // knob scale labels (empty = 0..10)
+        juce::String alt;               // Switch: label for the upper (on / second) position
+    };
+
+    inline FpItem fpKnob (const juce::String& id, const juce::String& label, int size = 1, juce::StringArray scale = {})
+    { FpItem i; i.kind = FpItem::Knob; i.param = id; i.label = label; i.size = size; i.scale = std::move (scale); return i; }
+    inline FpItem fpStepped (const juce::String& id, const juce::String& label, int size = 1)
+    { FpItem i; i.kind = FpItem::Stepped; i.param = id; i.label = label; i.size = size; return i; }
+    inline FpItem fpButtons (const juce::String& id, const juce::String& label)
+    { FpItem i; i.kind = FpItem::Buttons; i.param = id; i.label = label; return i; }
+    inline FpItem fpPush (const juce::String& id, const juce::String& label)
+    { FpItem i; i.kind = FpItem::Push; i.param = id; i.label = label; return i; }
+    inline FpItem fpSwitch (const juce::String& id, const juce::String& down, const juce::String& up)
+    { FpItem i; i.kind = FpItem::Switch; i.param = id; i.label = down; i.alt = up; return i; }
+    inline FpItem fpVu (const juce::String& label, int size = 1)
+    { FpItem i; i.kind = FpItem::Vu; i.label = label; i.size = size; return i; }
+    inline FpItem fpLeds (const juce::String& label)
+    { FpItem i; i.kind = FpItem::Leds; i.label = label; return i; }
+    inline FpItem fpDisplay (const juce::String& id, const juce::String& label)
+    { FpItem i; i.kind = FpItem::Display; i.param = id; i.label = label; return i; }
+    inline FpItem fpTap() { FpItem i; i.kind = FpItem::Tap; i.label = "TAP"; return i; }
+    inline FpItem fpGap() { FpItem i; i.kind = FpItem::Gap; return i; }
+
+    struct Faceplate
+    {
+        enum Finish { Paint, Brushed, Hammertone };
+        enum KnobStyle { BlackSkirt, Silver, ChickenHead, Cream, Pointer };
+        juce::String title, subtitle;
+        juce::uint32 panel = 0xff2a2d31, ink = 0xffe8e4da, led = 0xffff3b2f;
+        Finish finish = Paint;
+        KnobStyle knobs = BlackSkirt;
+        // optional second look selected by a choice parameter (e.g. FET 76 silver / black unit)
+        juce::String altParam;
+        juce::uint32 altPanel = 0, altInk = 0;
+        Finish altFinish = Paint;
+        KnobStyle altKnobs = BlackSkirt;
+        std::vector<std::vector<FpItem>> rows;
+        bool empty() const { return rows.empty(); }
     };
 
     enum class Graph { None, Compressor, DynEq };
@@ -53,6 +107,7 @@ namespace ltp
         Graph graph = Graph::None;
         int editorWidth = 860;          // panels wrap at this width (meters column added on the right)
         float maxGrDb = 24.0f;
+        bool hasUnitView = true;        // false when there is no hardware original (Dyn8)
     };
 
     // ---------------------------------------------------------------- parameter helpers
@@ -92,6 +147,9 @@ namespace ltp
         virtual float responseDb (float hz, bool withDynamics) const { (void) hz; (void) withDynamics; return 0.0f; }
         virtual void graphMarkers (std::vector<std::pair<float, float>>& freqGain) const { (void) freqGain; }
         virtual void crossoverFreqs (std::vector<float>& f) const { (void) f; }
+
+        // UNIT view front panel. Empty = build a rack-style panel from the sections.
+        virtual Faceplate getFaceplate() const { return {}; }
 
         // tap tempo (message thread) - sets the plugin's "bpm" parameter or its "timeL" ms parameter
         void tap();

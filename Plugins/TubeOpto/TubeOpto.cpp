@@ -53,8 +53,20 @@ public:
                                          knob ("gain", "GAIN", "Restores the level lost to compression") } },
             { "SIDECHAIN EMPHASIS & UNIT", 2, { knob ("emphasis", "EMPHASIS", "Makes the detector more sensitive to high frequencies"),
                                                 segment ("unit", "UNIT", "Two modeled hardware units: B has a longer release memory and more tube colour") } },
-            { "PARALLEL", 6, { knob ("mix", "PARALLEL", "Wet/dry blend: 100% = fully compressed") } }
+            { "PARALLEL", 6, { knob ("mix", "PARALLEL", "Wet/dry blend: 100% = fully compressed") }, {}, false, Section::Extra }
         };
+    }
+
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "TUBE LEVELING AMPLIFIER"; f.subtitle = "Electro-optical  -  SQ model: OptTronik";
+        f.panel = 0xffa2a7ab; f.ink = 0xff141414; f.finish = Faceplate::Hammertone; f.knobs = Faceplate::Pointer; f.led = 0xffff4a3a;
+        f.rows = { { fpKnob ("gain", "GAIN", 2, { "0", "20", "40", "60", "80", "100" }), fpVu ("GAIN REDUCTION", 2),
+                     fpKnob ("peakRed", "PEAK REDUCTION", 2, { "0", "20", "40", "60", "80", "100" }) },
+                   { fpSwitch ("mode", "COMPRESS", "LIMIT"), fpKnob ("emphasis", "EMPHASIS", 0, { "0", "25", "50", "75", "100" }),
+                     fpSwitch ("unit", "UNIT A", "UNIT B") } };
+        return f;
     }
 
     static constexpr float fixedThreshold = 0.0f;   // dBFS, before the sidechain gain

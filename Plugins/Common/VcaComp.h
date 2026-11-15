@@ -52,6 +52,25 @@ namespace ltp
             };
         }
 
+        Faceplate getFaceplate() const override
+        {
+            Faceplate f;
+            if constexpr (Vu)
+            {
+                f.title = "16VU COMPRESSOR / LIMITER"; f.subtitle = "Vintage VCA, true RMS  -  SQ model: 16VU";
+                f.panel = 0xffb9bcc0; f.ink = 0xff17181a; f.finish = Faceplate::Brushed; f.knobs = Faceplate::BlackSkirt; f.led = 0xffff3b2f;
+                f.rows = { { fpKnob ("thresh", "THRESHOLD", 2), fpVu ("GAIN REDUCTION", 2), fpKnob ("ratio", "COMPRESSION", 2) },
+                           { fpKnob ("output", "OUTPUT GAIN", 1) } };
+            }
+            else
+            {
+                f.title = "16T COMPRESSOR / LIMITER"; f.subtitle = "VCA, true RMS  -  SQ model: 16T";
+                f.panel = 0xff222528; f.ink = 0xffd8dde2; f.knobs = Faceplate::BlackSkirt; f.led = 0xffff3b2f;
+                f.rows = { { fpKnob ("thresh", "THRESHOLD", 1), fpKnob ("ratio", "COMPRESSION", 1), fpKnob ("output", "OUTPUT GAIN", 1), fpLeds ("GR") } };
+            }
+            return f;
+        }
+
     protected:
         void prepareModel (double sampleRate) override
         {

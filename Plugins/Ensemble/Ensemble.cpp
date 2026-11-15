@@ -44,6 +44,15 @@ public:
         };
     }
 
+    Faceplate getFaceplate() const override
+    {
+        Faceplate f;
+        f.title = "SYMPHONIC ENSEMBLE"; f.subtitle = "SQ model: Symphonic Chorus";
+        f.panel = 0xff7d4422; f.ink = 0xfff8ecd8; f.knobs = Faceplate::Cream; f.led = 0xffffb02e;
+        f.rows = { { fpKnob ("freq", "FREQUENCY", 2, { "#" }), fpKnob ("depth", "DEPTH", 2, { "#" }) } };
+        return f;
+    }
+
 protected:
     void prepareFx (double sampleRate, int) override
     {
