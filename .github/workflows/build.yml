@@ -1,0 +1,132 @@
+name: Build LiveTest plugins
+
+# Builds all 21 LiveTest VST3 plugins and the LiveTest Updater for macOS (universal) and
+# Windows, runs the offline DSP tests on Linux, and on every push to main replaces the
+# "Latest build" release (with manifest.json, which the Updater reads).
+#   - Push a tag like v0.2.0 to also keep a permanent release for that version.
+#   - Every run: Actions tab > the run > Artifacts (same files).
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }} ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        shard: [dyn1, dyn2, fx1, fx2, updater]
+        include:
+          - os: macos-latest
+            name: macOS
+            py: python3
+          - os: windows-latest
+            name: Windows
+            py: python
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick targets
+        id: t
+        shell: bash
+        run: ${{ matrix.py }} tools/ci.py targets ${{ matrix.shard }}
+
+      - name: Configure (Release)
+        shell: bash
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DLTP_BUILD_PLUGINS=${{ steps.t.outputs.plugins }}
+          -DLTP_BUILD_UPDATER=${{ steps.t.outputs.updater }}
+          "-DLTP_ONLY=${{ steps.t.outputs.ids }}"
+
+      - name: Build
+        shell: bash
+        run: |
+          set +e
+          cmake --build build --config Release --parallel --target ${{ steps.t.outputs.targets }} > build.log 2>&1
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            grep -E "error[: ]|error C|undefined|FAILED" build.log | head -15 | while IFS= read -r line; do echo "::error::$(echo "$line" | cut -c1-450)"; done
+            tail -80 build.log
+          fi
+          exit $rc
+
+      - name: Package
+        shell: bash
+        run: ${{ matrix.py }} tools/ci.py package ${{ matrix.shard }} ${{ matrix.name }} build dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveTest-${{ matrix.shard }}-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  tests:
+    name: Offline DSP tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config \
+            libasound2-dev libfreetype-dev libfontconfig1-dev \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxi-dev libxcomposite-dev libxrender-dev
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLTP_BUILD_PLUGINS=OFF -DLTP_BUILD_UPDATER=OFF -DLTP_BUILD_TESTS=ON
+      - name: Build tests
+        run: cmake --build build --target LiveTestTests
+      - name: Run tests
+        shell: bash
+        run: |
+          set +e
+          ./build/Tests/LiveTestTests_artefacts/Release/LiveTestTests | tee test-output.txt
+          status=${PIPESTATUS[0]}
+          grep "FAIL" test-output.txt | sed 's/^/::error::/' || true
+          tail -1 test-output.txt | sed 's/^/::notice::/'
+          exit $status
+
+  publish:
+    name: Publish release
+    needs: [build, tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Manifest and release notes
+        run: |
+          python3 tools/ci.py manifest dist
+          python3 tools/ci.py notes dist
+          mv dist/notes.md notes.md
+          echo "VERSION=$(python3 -c 'import json;print(json.load(open("plugins.json"))["suiteVersion"])')" >> "$GITHUB_ENV"
+          ls -la dist
+
+      - name: Replace the "Latest build" release (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          gh release delete latest-build --cleanup-tag --yes || true
+          gh release create latest-build dist/* --target "$GITHUB_SHA" \
+            --title "Latest build - LiveTest $VERSION" --notes-file notes.md --latest
+
+      - name: Permanent release for a version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag \
+            --title "LiveTest $GITHUB_REF_NAME" --notes-file notes.md --latest=false

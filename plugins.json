@@ -1,0 +1,27 @@
+{
+  "suiteVersion": "0.1.0",
+  "updaterVersion": "0.1.0",
+  "plugins": [
+    { "id": "OptoComp",    "name": "LiveTest Opto Comp",    "code": "Lop1", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "Opto",              "modeledOn": "Filament, electro-luminescent and LED optical compressors" },
+    { "id": "Fet76",       "name": "LiveTest FET 76",       "code": "Lf76", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "Peak Limiter 76",   "modeledOn": "Late-1960s FET limiting amplifier (silver and black units)" },
+    { "id": "Vca16T",      "name": "LiveTest VCA 16T",      "code": "L16t", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "16T",               "modeledOn": "Workhorse VCA true-RMS live compressor" },
+    { "id": "Vca16VU",     "name": "LiveTest VCA 16VU",     "code": "L16v", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "16VU",              "modeledOn": "Vintage VCA RMS compressor with VU meter" },
+    { "id": "BusComp",     "name": "LiveTest Bus Comp",     "code": "Lbus", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "Bus",               "modeledOn": "British console VCA bus compressor" },
+    { "id": "TubeOpto",    "name": "LiveTest Tube Opto",    "code": "Ltop", "version": "0.1.0", "family": "Dynamics", "shard": "dyn1", "sq": "OptTronik",         "modeledOn": "Tube electro-optical leveling amplifier (two units)" },
+    { "id": "PunchComp",   "name": "LiveTest Punch Comp",   "code": "Lpch", "version": "0.1.0", "family": "Dynamics", "shard": "dyn2", "sq": "Mighty",            "modeledOn": "Transistor-array VCA compressor" },
+    { "id": "DistortComp", "name": "LiveTest Distort Comp", "code": "Ldst", "version": "0.1.0", "family": "Dynamics", "shard": "dyn2", "sq": "CompStortion",      "modeledOn": "Modern multi-mode compressor with distortion modes" },
+    { "id": "PeakComp",    "name": "LiveTest Peak Comp",    "code": "Lpkc", "version": "0.1.0", "family": "Dynamics", "shard": "dyn2", "sq": "Manual Peak",       "modeledOn": "Clean digital peak compressor" },
+    { "id": "RmsComp",     "name": "LiveTest RMS Comp",     "code": "Lrms", "version": "0.1.0", "family": "Dynamics", "shard": "dyn2", "sq": "Manual RMS",        "modeledOn": "Clean digital RMS compressor" },
+    { "id": "DynMulti",    "name": "LiveTest Dyn8",         "code": "Ldy8", "version": "0.1.0", "family": "Dynamics", "shard": "dyn2", "sq": "Dyn8",              "modeledOn": "4-band dynamic EQ + 4-band multiband compressor" },
+    { "id": "Reverb",      "name": "LiveTest Reverb",       "code": "Lrev", "version": "0.1.0", "family": "FX",       "shard": "fx1",  "sq": "SMR Reverb",        "modeledOn": "Hall, room, classic and plate algorithmic reverbs" },
+    { "id": "GatedVerb",   "name": "LiveTest Gated Verb",   "code": "Lgvb", "version": "0.1.0", "family": "FX",       "shard": "fx1",  "sq": "Gated Verb",        "modeledOn": "1980s non-linear / gated reverb" },
+    { "id": "TapDelay",    "name": "LiveTest Tap Delay",    "code": "Ltap", "version": "0.1.0", "family": "FX",       "shard": "fx1",  "sq": "Stereo Tap Delay",  "modeledOn": "Clean stereo digital delay" },
+    { "id": "Adt",         "name": "LiveTest ADT",          "code": "Ladt", "version": "0.1.0", "family": "FX",       "shard": "fx1",  "sq": "ADT",               "modeledOn": "Tape-based artificial double tracking" },
+    { "id": "Chorus",      "name": "LiveTest Chorus",       "code": "Lcho", "version": "0.1.0", "family": "FX",       "shard": "fx1",  "sq": "Chorus",            "modeledOn": "Stereo modulated-delay chorus" },
+    { "id": "Ensemble",    "name": "LiveTest Ensemble",     "code": "Lens", "version": "0.1.0", "family": "FX",       "shard": "fx2",  "sq": "Symphonic Chorus",  "modeledOn": "Multi-voice string-ensemble chorus" },
+    { "id": "Flanger",     "name": "LiveTest Flanger",      "code": "Lflg", "version": "0.1.0", "family": "FX",       "shard": "fx2",  "sq": "Flanger",           "modeledOn": "Tape and analogue flangers" },
+    { "id": "Phaser12",    "name": "LiveTest Phaser 12",    "code": "Lphs", "version": "0.1.0", "family": "FX",       "shard": "fx2",  "sq": "MOO 12 Stage Phaser", "modeledOn": "12-stage analogue synth phaser" },
+    { "id": "BbdDelay",    "name": "LiveTest BBD Delay",    "code": "Lbbd", "version": "0.1.0", "family": "FX",       "shard": "fx2",  "sq": "Bucket Brigade",    "modeledOn": "Bucket-brigade-chip analogue delay" },
+    { "id": "TapeEcho",    "name": "LiveTest Tape Echo",    "code": "Ltpe", "version": "0.1.0", "family": "FX",       "shard": "fx2",  "sq": "Echo",              "modeledOn": "Three-head tape echo" }
+  ]
+}
