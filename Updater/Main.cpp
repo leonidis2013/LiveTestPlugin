@@ -180,7 +180,7 @@ namespace
         const int code = ltpRunElevatedScript (f.getFullPathName().toWideCharPointer(), err);
        #else
         auto f = workDir().getChildFile ("install.sh");
-        f.replaceWithText (script);
+        f.replaceWithText (script, false, false, "\n");   // Unix line endings - JUCE defaults to \r\n, which breaks sh
         const int code = ltpRunElevatedScript (f.getFullPathName().toStdString(), err);
        #endif
         if (code != 0) error = err.empty() ? juce::String ("Install script failed") : juce::String (err);
