@@ -190,8 +190,13 @@ namespace
     // ------------------------------------------------------------ model
     struct Entry
     {
+        enum Job { None, Queued, Working, Done, Failed };
         juce::String id, name, family, sq, modeledOn, latest, installed, asset;
         bool selected = false;
+        // progress of the current / last install or remove for this plugin
+        Job job = None;
+        juce::String jobText;
+        double jobProgress = 0.0;
     };
 
     class Worker : public juce::Thread
@@ -211,19 +216,17 @@ class UpdaterComponent : public juce::Component, private juce::TableListBoxModel
 public:
     explicit UpdaterComponent (bool demo = false)
     {
-        theme::setLightMode (theme::loadLightModePreference());
+        theme::setLightMode (true);   // the updater always uses the light look (not saved, so plugins keep their own setting)
         lnf.applyColours();
         setLookAndFeel (&lnf);
 
-        for (auto* b : { &refreshBtn, &themeBtn, &allBtn, &updatesBtn, &noneBtn, &installBtn, &removeBtn, &folderBtn, &updaterBtn })
+        for (auto* b : { &refreshBtn, &allBtn, &updatesBtn, &noneBtn, &installBtn, &removeBtn, &folderBtn, &updaterBtn })
             addAndMakeVisible (b);
         installBtn.setColour (juce::TextButton::buttonColourId, theme::eq);
         installBtn.setColour (juce::TextButton::textColourOffId, theme::onAccent);
-        themeBtn.setButtonText (theme::lightMode ? "DARK" : "LIGHT");
         updaterBtn.setVisible (false);
 
         refreshBtn.onClick = [this] { refresh(); };
-        themeBtn.onClick = [this] { toggleTheme(); };
         allBtn.onClick = [this] { for (auto& e : entries) e.selected = true; table.repaint(); updateButtons(); };
         noneBtn.onClick = [this] { for (auto& e : entries) e.selected = false; table.repaint(); updateButtons(); };
         updatesBtn.onClick = [this] { for (auto& e : entries) e.selected = needsInstall (e); table.repaint(); updateButtons(); };
@@ -243,7 +246,8 @@ public:
         h.addColumn ("SQ model", 4, 150, 80, 300, colFlags | juce::TableHeaderComponent::resizable);
         h.addColumn ("Installed", 5, 84, 60, 200, colFlags | juce::TableHeaderComponent::resizable);
         h.addColumn ("Latest", 6, 84, 60, 200, colFlags | juce::TableHeaderComponent::resizable);
-        h.addColumn ("Status", 7, 160, 80, 400, colFlags | juce::TableHeaderComponent::resizable);
+        h.addColumn ("Status", 7, 150, 80, 400, colFlags | juce::TableHeaderComponent::resizable);
+        h.addColumn ("Progress", 8, 210, 120, 400, colFlags | juce::TableHeaderComponent::resizable);
         h.setStretchToFitActive (true);
         addAndMakeVisible (table);
 
@@ -254,7 +258,7 @@ public:
         progressBar.setColour (juce::ProgressBar::backgroundColourId, theme::panelHi);
         addAndMakeVisible (progressBar);
 
-        setSize (900, 600);
+        setSize (1020, 680);
         styleTable();
         if (demo) loadDemo(); else refresh();
     }
@@ -274,7 +278,9 @@ public:
         }
         table.updateContent();
         updateButtons();
-        progress = 0.4;
+        entries[1].job = Entry::Working; entries[1].jobText = "Downloading"; entries[1].jobProgress = 0.46;
+        entries[3].job = Entry::Done; entries[3].jobText = "Installed v0.1.1"; entries[3].jobProgress = 1.0;
+        updateOverall();
         setStatus ("Release 0.1.0 (2026-11-15 19:20 UTC): 21 plugins, 4 installed, 3 need installing or updating.");
         updaterBtn.setButtonText ("New updater v0.2.0 - download");
         updaterBtn.setColour (juce::TextButton::buttonColourId, theme::warn);
@@ -322,13 +328,12 @@ public:
         auto head = r.removeFromTop (headerH).reduced (10, 0);
         const int cy = headerH / 2;
         auto right = [&] (juce::Component& c, int w) { c.setBounds (head.removeFromRight (w).withHeight (26).withY (cy - 13)); head.removeFromRight (8); };
-        right (themeBtn, 64);
         right (refreshBtn, 90);
         right (updaterBtn, 240);
 
         r.removeFromTop (30);
         r.reduce (10, 0);
-        auto bottom = r.removeFromBottom (86);
+        auto bottom = r.removeFromBottom (92);
         table.setBounds (r);
 
         bottom.removeFromTop (10);
@@ -340,8 +345,8 @@ public:
         removeBtn.setBounds (row.removeFromRight (150)); row.removeFromRight (8);
         folderBtn.setBounds (row.removeFromRight (110));
         bottom.removeFromTop (10);
-        auto line = bottom.removeFromTop (22);
-        progressBar.setBounds (line.removeFromRight (220));
+        auto line = bottom.removeFromTop (26);
+        progressBar.setBounds (line.removeFromRight (360));
         line.removeFromRight (10);
         status.setBounds (line);
     }
@@ -377,6 +382,28 @@ private:
                 g.setColour (theme::onAccent);
                 g.strokePath (tick, juce::PathStrokeType (2.0f));
             }
+            return;
+        }
+        if (col == 8)
+        {
+            if (e.job == Entry::None) return;
+            auto bar = juce::Rectangle<float> (6.0f, (float) h * 0.5f - 10.0f, (float) w - 12.0f, 20.0f);
+            g.setColour (theme::bg);
+            g.fillRoundedRectangle (bar, 4.0f);
+            const auto fill = e.job == Entry::Failed ? theme::danger : e.job == Entry::Done ? theme::good : theme::eq;
+            const float frac = (float) juce::jlimit (0.0, 1.0, e.jobProgress);
+            if (frac > 0.0f)
+            {
+                g.setColour (fill.withAlpha (e.job == Entry::Working ? 0.75f : 0.9f));
+                g.fillRoundedRectangle (bar.withWidth (std::max (6.0f, bar.getWidth() * frac)), 4.0f);
+            }
+            g.setColour (theme::border);
+            g.drawRoundedRectangle (bar, 4.0f, 1.0f);
+            juce::String t = e.jobText;
+            if (e.job == Entry::Working) t << "  " << juce::String (juce::roundToInt (frac * 100.0f)) << "%";
+            g.setColour (theme::text);
+            g.setFont (theme::font (12.0f, true));
+            g.drawText (t, bar.reduced (6.0f, 0.0f).toNearestInt(), juce::Justification::centred, true);
             return;
         }
         juce::String text;
@@ -430,6 +457,49 @@ private:
         return theme::good;
     }
 
+    // ------------------------------------------------------------ progress
+    Entry* findEntry (const juce::String& id)
+    {
+        for (auto& e : entries) if (e.id == id) return &e;
+        return nullptr;
+    }
+
+    void setItem (const juce::String& id, Entry::Job job, const juce::String& text, double p)
+    {
+        if (auto* e = findEntry (id))
+        {
+            e->job = job; e->jobText = text; e->jobProgress = p;
+            table.repaintRow ((int) (e - entries.data()));
+        }
+        updateOverall();
+    }
+
+    // overall = average of every plugin in the current job; text "Overall: 3 of 5 done - 62%"
+    void updateOverall()
+    {
+        int n = 0, done = 0, failed = 0;
+        double sum = 0.0;
+        for (auto& e : entries)
+        {
+            if (e.job == Entry::None) continue;
+            ++n;
+            sum += juce::jlimit (0.0, 1.0, e.jobProgress);
+            if (e.job == Entry::Done) ++done;
+            if (e.job == Entry::Failed) ++failed;
+        }
+        if (n == 0) { progress = 0.0; progressBar.setTextToDisplay ("Overall progress"); return; }
+        progress = sum / n;
+        juce::String t = "Overall: " + juce::String (done) + " of " + juce::String (n) + " done";
+        if (failed > 0) t << ", " << failed << " failed";
+        t << "  -  " << juce::roundToInt (progress * 100.0) << "%";
+        progressBar.setTextToDisplay (t);
+    }
+
+    static void postItem (juce::Component::SafePointer<UpdaterComponent> safe, juce::String id, Entry::Job job, juce::String text, double p)
+    {
+        juce::MessageManager::callAsync ([safe, id, job, text, p] { if (safe) safe->setItem (id, job, text, p); });
+    }
+
     // ------------------------------------------------------------ actions
     void setStatus (const juce::String& s, bool isError = false)
     {
@@ -476,7 +546,8 @@ private:
     {
         if (busy) return;
         setBusy (true);
-        progress = -1.0;
+        progress = -1.0;   // indeterminate while checking
+        progressBar.setTextToDisplay ({});
         setStatus ("Checking GitHub for the latest LiveTest release...");
         juce::Component::SafePointer<UpdaterComponent> safe (this);
         startWorker ([safe] (Worker&)
@@ -496,6 +567,7 @@ private:
     void applyManifest (bool ok, const juce::var& json, const juce::String& err)
     {
         progress = 0.0;
+        progressBar.setTextToDisplay ("Overall progress");
         if (! ok || ! json.isObject())
         {
             setBusy (false);
@@ -544,9 +616,12 @@ private:
         for (auto& e : entries) if (e.selected && e.asset.isNotEmpty()) todo.push_back (e);
         if (todo.empty() || busy) return;
         setBusy (true);
-        progress = 0.0;
+        for (auto& e : entries) { e.job = Entry::None; e.jobText = {}; e.jobProgress = 0.0; }
+        for (auto& e : todo) if (auto* x = findEntry (e.id)) { x->job = Entry::Queued; x->jobText = "Queued"; }
+        table.repaint();
+        updateOverall();
         juce::Component::SafePointer<UpdaterComponent> safe (this);
-        startWorker ([safe, todo, this] (Worker& w)
+        startWorker ([safe, todo] (Worker& w)
         {
             auto post = [safe] (juce::String text, bool err) { juce::MessageManager::callAsync ([safe, text, err] { if (safe) safe->setStatus (text, err); }); };
             const auto dir = workDir();
@@ -560,25 +635,40 @@ private:
                 const auto& e = todo[i];
                 post ("Downloading " + e.name + " (" + juce::String ((int) i + 1) + " of " + juce::String ((int) todo.size()) + ")...", false);
                 const auto zip = dir.getChildFile (e.id + ".zip");
-                const double base = (double) i / (double) todo.size(), span = 1.0 / (double) todo.size();
-                if (! fetch (releaseBase() + e.asset, nullptr, &zip, [this, base, span] (double p) { progress = (base + p * span) * 0.9; }, err)
-                    || ! unzip (zip, dir.getChildFile (e.id), err))
+                postItem (safe, e.id, Entry::Working, "Downloading", 0.0);
+                auto lastSent = std::make_shared<double> (-1.0);
+                auto failAll = [&] (const juce::String& why)
                 {
-                    post (e.name + ": " + err, true);
-                    return finish (safe, false);
-                }
+                    postItem (safe, e.id, Entry::Failed, "Failed", 1.0);
+                    for (size_t k = i + 1; k < todo.size(); ++k) postItem (safe, todo[k].id, Entry::Failed, "Not installed", 0.0);
+                    post (e.name + ": " + why, true);
+                    finish (safe, false);
+                };
+                if (! fetch (releaseBase() + e.asset, nullptr, &zip, [safe, id = e.id, lastSent] (double p)
+                             {
+                                 if (p - *lastSent < 0.01 && p < 1.0) return;   // about 100 updates per download
+                                 *lastSent = p;
+                                 postItem (safe, id, Entry::Working, "Downloading", p * 0.85);
+                             }, err))
+                    return failAll (err);
+                postItem (safe, e.id, Entry::Working, "Unpacking", 0.88);
+                if (! unzip (zip, dir.getChildFile (e.id), err)) return failAll (err);
                 auto found = dir.getChildFile (e.id).findChildFiles (juce::File::findDirectories, false, "*.vst3");
-                if (found.isEmpty()) { post (e.name + ": the download didn't contain a .vst3", true); return finish (safe, false); }
+                if (found.isEmpty()) return failAll ("the download didn't contain a .vst3");
                 bundles.add (found[0].getFullPathName());
+                postItem (safe, e.id, Entry::Working, "Ready to install", 0.92);
                 if (w.threadShouldExit()) return;
             }
 
             post ("Installing " + juce::String ((int) todo.size()) + " plugin(s) - approve the permission prompt...", false);
+            for (auto& e : todo) postItem (safe, e.id, Entry::Working, "Installing", 0.95);
             if (! runElevated (installScript (todo, bundles), err))
             {
+                for (auto& e : todo) postItem (safe, e.id, Entry::Failed, "Not installed", 0.92);
                 post (err, true);
                 return finish (safe, false);
             }
+            for (auto& e : todo) postItem (safe, e.id, Entry::Done, "Installed v" + e.latest, 1.0);
             auto record = loadRecord();
             for (auto& e : todo) record.getDynamicObject()->setProperty (juce::Identifier (e.id), e.latest);
             saveRecord (record);
@@ -601,10 +691,15 @@ private:
                 if (result == 0 || safe == nullptr) return;
                 safe->setBusy (true);
                 safe->setStatus ("Removing - approve the permission prompt...");
+                for (auto& e : safe->entries) { e.job = Entry::None; e.jobText = {}; e.jobProgress = 0.0; }
+                for (auto& e : todo) if (auto* x = safe->findEntry (e.id)) { x->job = Entry::Working; x->jobText = "Removing"; x->jobProgress = 0.5; }
+                safe->table.repaint();
+                safe->updateOverall();
                 safe->startWorker ([safe, todo] (Worker&)
                 {
                     juce::String err;
                     const bool ok = runElevated (removeScript (todo), err);
+                    for (auto& e : todo) postItem (safe, e.id, ok ? Entry::Done : Entry::Failed, ok ? "Removed" : "Not removed", 1.0);
                     if (ok)
                     {
                         auto record = loadRecord();
@@ -626,8 +721,8 @@ private:
         juce::MessageManager::callAsync ([safe, ok]
         {
             if (safe == nullptr) return;
-            safe->progress = ok ? 1.0 : 0.0;
             safe->scanInstalled();
+            safe->updateOverall();
             if (ok) for (auto& e : safe->entries) e.selected = false;
             safe->table.updateContent();
             safe->table.repaint();
@@ -709,23 +804,11 @@ private:
         progressBar.setColour (juce::ProgressBar::backgroundColourId, theme::panelHi);
     }
 
-    void toggleTheme()
-    {
-        theme::setLightMode (! theme::lightMode);
-        theme::saveLightModePreference (theme::lightMode);
-        lnf.applyColours();
-        themeBtn.setButtonText (theme::lightMode ? "DARK" : "LIGHT");
-        styleTable();
-        status.setColour (juce::Label::textColourId, theme::textDim);
-        sendLookAndFeelChange();
-        repaint();
-    }
-
     theme::LookAndFeel lnf;
     juce::TooltipWindow tooltips { this, 500 };
     std::vector<Entry> entries;
     juce::TableListBox table;
-    juce::TextButton refreshBtn { "REFRESH" }, themeBtn, allBtn { "All" }, updatesBtn { "Updates" }, noneBtn { "None" },
+    juce::TextButton refreshBtn { "REFRESH" }, allBtn { "All" }, updatesBtn { "Updates" }, noneBtn { "None" },
                      installBtn { "INSTALL / UPDATE" }, removeBtn { "REMOVE" }, folderBtn { "OPEN FOLDER" }, updaterBtn;
     juce::Label status;
     double progress = 0.0;

@@ -75,6 +75,8 @@ Common to all of them:
    - **Windows:** if **Windows protected your PC** appears, click **More info > Run anyway**.
 3. Tick the plugins you want (or press **Updates**), then click **INSTALL / UPDATE**. You'll get one
    password prompt (Mac) or UAC prompt (Windows) for the whole batch. Old copies are removed first.
+   The **Progress** column shows each plugin's stage (Queued, Downloading %, Unpacking, Installing,
+   Installed / Failed), and the bar at the bottom shows the overall progress ("3 of 5 done - 62%").
 4. Reopen your host and rescan plug-ins.
 
 The updater installs into the system VST3 folder (`/Library/Audio/Plug-Ins/VST3` on Mac,
