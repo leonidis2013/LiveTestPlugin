@@ -1,6 +1,6 @@
 {
   "suiteVersion": "0.2.0",
-  "updaterVersion": "0.2.0",
+  "updaterVersion": "0.2.1",
   "plugins": [
     { "id": "OptoComp",    "name": "LiveTest Opto Comp",    "code": "Lop1", "version": "0.2.0", "family": "Dynamics", "shard": "dyn1", "sq": "Opto",              "modeledOn": "Filament, electro-luminescent and LED optical compressors" },
     { "id": "Fet76",       "name": "LiveTest FET 76",       "code": "Lf76", "version": "0.2.0", "family": "Dynamics", "shard": "dyn1", "sq": "Peak Limiter 76",   "modeledOn": "Late-1960s FET limiting amplifier (silver and black units)" },

@@ -443,6 +443,10 @@ private:
 
     static juce::String statusText (const Entry& e)
     {
+        // while a job runs (and right after it) the status follows it live
+        if (e.job == Entry::Queued) return "Queued";
+        if (e.job == Entry::Working) return e.jobText + "...";
+        if (e.job == Entry::Failed) return e.jobText;
         if (e.latest.isEmpty()) return "Not in this release";
         if (e.installed.isEmpty()) return "Not installed";
         if (e.installed == "?") return "Installed (version unknown)";
@@ -452,6 +456,9 @@ private:
 
     static juce::Colour statusColour (const Entry& e)
     {
+        if (e.job == Entry::Queued) return theme::textDim;
+        if (e.job == Entry::Working) return theme::eq;
+        if (e.job == Entry::Failed) return theme::danger;
         if (e.installed.isEmpty()) return theme::textDim;
         if (e.installed == "?" || needsInstall (e)) return theme::warn;
         return theme::good;
@@ -469,6 +476,9 @@ private:
         if (auto* e = findEntry (id))
         {
             e->job = job; e->jobText = text; e->jobProgress = p;
+            // show the result straight away in the Installed / Status columns
+            if (job == Entry::Done && text.startsWith ("Installed")) e->installed = e->latest;
+            if (job == Entry::Done && text == "Removed") e->installed = {};
             table.repaintRow ((int) (e - entries.data()));
         }
         updateOverall();
